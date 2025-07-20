@@ -5,6 +5,7 @@ const JWT_SECRET = "hellopiyush";
 app.use(express.json());
 const users = [];
 
+
 app.post("/signup", function(req, res) {
     const username = req.body.username;
     const password = req.body.password;
