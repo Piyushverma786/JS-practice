@@ -35,6 +35,19 @@ app.post("/signin", function(req, res) {
         res.status(401).json({ message: "Invalid username or password" });
     }
 });
+     function auth(req,res,next){
+        const token = req.headers.token
+        const decodedInfo = jwt.verify(token,JWT_SECRET)
+        if(decodedInfo.username){
+            req.username = decodedInfo.username
+            next()
+        }
+        else{
+            res.json({
+                message : "you are not logged in"
+            })
+        }
+     }
 
 app.get("/me", function(req, res) {
     const token = req.headers.token;
@@ -50,7 +63,7 @@ app.get("/me", function(req, res) {
     const username = decodedInfo.username;
     let foundUser = null;
     for (let i = 0; i < users.length; i++) {
-        if (users[i].username === username) {
+        if (users[i].username === decodedInfo.username) {
             foundUser = users[i];
         }
     }
