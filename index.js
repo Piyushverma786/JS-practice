@@ -3,7 +3,7 @@ const app = express();
 const jwt = require('jsonwebtoken');
 const { default: mongoose } = require("mongoose");
 const JWT_SECRET = "hellopiyush";
-mongoose.connect('mongodb+srv://piyush:GmHRPqobtFwbiW79@cluster0.ekcld.mongodb.net/todo-app')
+mongoose.connect('mongodb+srv://piyush:helloworld12@cluster0.ekcld.mongodb.net/todo-app')
 
 const {UserModel, TodoModel} = require('./db');
 
@@ -20,9 +20,9 @@ app.post("/signup", async function(req, res) {
     // const password = req.body.password;
      await UserModel.create({
     
-    email : "email",
-    password : "password",
-    name : "name",
+    email : email,
+    password : password,
+    name : name,
 })
     
     
@@ -62,6 +62,49 @@ app.post("/signin", async function(req, res) {
         })
     }
 })
+app.post("/todo", auth, async function(req, res){          //Yeh todos ko add krne ke liye hai 
+    const userId = req.userId;                      //middleware ke pass se jo req.userId jispe decodedData ka id hai woh idhr pass on hua 
+    const title = req.body.title                    //yaha se title input denge 
+    await TodoModel.create({                        //database call isliye await kiye
+        title,                                      //TodoModel wale collection mein yeh create ho jyega 
+        userId,
+        done
+    })
+    res.json({
+        message: "Todo created!"
+    })
+});
+
+app.get("/todos", auth, async function(req, res){           //yeh kaunsa todo kis user ka hai woh return krne k liye..ki like kaunsa userId pe kya kya todo hai yeh btayega woh
+    const userId = req.userId;                              //middleware ke pass se jo req.userId jispe decodedData ka id hai woh idhr pass on hua 
+    
+    const todos = await TodoModel.find({                    //userId se woh todos ko search kr lega for this specific id provided to it
+        userId
+    })
+    
+    res.json({
+        todo                                                //todos jo milnge woh output pe milenge 
+    })
+
+});
+
+function auth(req, res, next){                              //same auth fucntion which was used before 
+    const token = req.headers.token
+
+    const decodedData = jwt.verify(token, JWT_SECRET)
+
+    if(decodedData){
+        req.userId = decodedData.id;                         //User Id ko decodedData se le rhe hia idhar 
+        next();
+    }
+    else{
+        req.status(403).json({
+            message: "Incorrect Credentials !"
+        })
+    }
+}
+
+
 
 //     let foundUser = null;
 //     for (let i = 0; i < users.length; i++) {
