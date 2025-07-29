@@ -1,9 +1,11 @@
 const express = require("express");
+const bcrypt = require("bcrypt");
 const app = express();
 const jwt = require('jsonwebtoken');
 const { default: mongoose } = require("mongoose");
 const JWT_SECRET = "hellopiyush";
-mongoose.connect('mongodb+srv://piyush:helloworld12@cluster0.ekcld.mongodb.net/todo-app')
+const {z} = require("zod")
+mongoose.connect('mongodb+srv://piyush:helloworld12@cluster0.ekcld.mongodb.net/todo-app-77')
 
 const {UserModel, TodoModel} = require('./db');
 
@@ -13,15 +15,40 @@ const users = [];
 
 
 app.post("/signup", async function(req, res) {
+    const requiredBody = z.object({
+        email : z.string(),
+        name : z.string(),
+        password : z.string()
+
+    })
+    const parsedDataWithSuccess = requiredBody.safeParse(req.body)
+    if(!parsedDataWithSuccess.success){
+        res.json({
+            message : "incorrect format"
+        })
+        return
+    }
+
     const email = req.body.email;
     const password = req.body.password;
     const name = req.body.name
+
+    
+if(typeof email != "string" || email.length <5 || !email.includes("@")){
+    res.json({
+        message : "incorrect email"
+    })
+    return
+}
     // const username = req.body.username;
     // const password = req.body.password;
+
+    const hashedPassword =  await bcrypt.hash(password ,5)
+    console.log(hashedPassword)
      await UserModel.create({
     
     email : email,
-    password : password,
+    password : hashedPassword,
     name : name,
 })
     
@@ -42,14 +69,22 @@ app.post("/signin", async function(req, res) {
     // const username = req.body.username;
     // const password = req.body.password;
 
-    const user = await UserModel.findOne({
+    const response = await UserModel.findOne({
         email : email,
-        password : password
+        
     })
-    console.log(user);
-    if(user){
+    if(!response){
+        res.status(403).json({
+            message : "user does not exist in the db"
+        })
+    }
+    const passwordMatched =  await bcrypt.compare(password,response.password)
+    // console.log(user);
+    if(passwordMatched){
         const token = jwt.sign(
-            { id: user._id }, // payload
+         {id : response._id },
+
+            // { id: user._id }, // payload
             JWT_SECRET        // secret
         )
         res.json({
